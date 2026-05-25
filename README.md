@@ -207,15 +207,18 @@ one.
 
 ### Setup and model choice
 
-To briefly reiterate, the task is binary classification at the
-(vehicle, day) grain with a 7-day prediction horizon and a roughly 10%
-positive rate. A gradient-boosted classifier is a reasonable first
-choice here: it handles mixed numeric features and missing values out
-of the box, fits in seconds on a panel this size, and supports a clean
-SHAP explanation for the final result. The per-vehicle frequency
-baseline alongside it gives a reference floor to measure lift against,
-and walk-forward validation over five date-boundary folds keeps the
-evaluation honest about the time-series nature of the data.
+To briefly reiterate, the brief asks for the likelihood that a vehicle
+will experience an unscheduled repair event in the next 7 days.
+Predicting the probability of a yes/no event over a fixed window is a
+binary classification problem, framed here at the (vehicle, day) grain
+with a roughly 10% positive rate. A gradient-boosted classifier is a
+reasonable first choice for it: it handles mixed numeric features and
+missing values out of the box, fits in seconds on a panel this size,
+and supports a clean SHAP explanation for the final result. A
+per-vehicle frequency baseline alongside it gives a reference floor to
+measure lift against, and walk-forward validation over five
+date-boundary folds keeps the evaluation honest about the time-series
+nature of the data.
 
 ### Features
 
