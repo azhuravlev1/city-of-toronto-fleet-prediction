@@ -207,16 +207,15 @@ one.
 
 ### Setup and model choice
 
-A short orientation for readers jumping straight to this section. The
-task is binary classification at the (vehicle, day) grain with a 7-day
-prediction horizon and a roughly 10% positive rate. A gradient-boosted
-classifier is a reasonable first choice here: it handles mixed numeric
-features and missing values out of the box, fits in seconds on a panel
-this size, and supports a clean SHAP explanation for the final result.
-The per-vehicle frequency baseline alongside it gives a reference floor
-to measure lift against, and walk-forward validation over five
-date-boundary folds keeps the evaluation honest about the time-series
-nature of the data.
+To briefly reiterate, the task is binary classification at the
+(vehicle, day) grain with a 7-day prediction horizon and a roughly 10%
+positive rate. A gradient-boosted classifier is a reasonable first
+choice here: it handles mixed numeric features and missing values out
+of the box, fits in seconds on a panel this size, and supports a clean
+SHAP explanation for the final result. The per-vehicle frequency
+baseline alongside it gives a reference floor to measure lift against,
+and walk-forward validation over five date-boundary folds keeps the
+evaluation honest about the time-series nature of the data.
 
 ### Features
 
