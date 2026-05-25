@@ -30,6 +30,35 @@ python main.py
 jupyter notebook notebooks/01_eda.ipynb
 ```
 
+## Repository layout
+
+```text
+.
+├── README.md  - This document
+├── requirements.txt  - Pinned dependencies
+├── main.py  - End-to-end runnable pipeline
+├── config.py  - Paths, label maps, modelling constants
+│
+├── data/
+│   ├── raw/  - Provided .xlsx files (gitignored)
+│   ├── external/  - Weather, holidays (fetched on demand)
+│   └── processed/  - Parquet cache + feature matrices
+│
+├── notebooks/
+│   └── 01_eda.ipynb  - Exploratory data analysis
+│
+├── src/
+│   ├── data_loading.py  - Read xlsx, normalise vehicle IDs, parquet cache
+│   ├── data_cleaning.py  - Parse EXTRA_INFO, classify jobs, WO grain
+│   ├── weather_api.py  - Open-Meteo historical-weather client
+│   ├── features.py  - Per-(vehicle, day) rolling-window features
+│   ├── modeling.py  - Walk-forward training and evaluation
+│   └── plotting.py  - Shared matplotlib styling
+│
+└── reports/
+    └── figures/  - PNGs referenced from this README
+```
+
 ## Data
 
 The three provided datasets describe complementary signals from the same
@@ -46,14 +75,14 @@ fleet.
 
 `JOB_REASON` is the field that determines whether a job was planned. The
 21 codes in the data fall into three classes, which I define in
-`config.py`. A job is *unscheduled* when the reason is a driver report,
+`config.py`. A job is unscheduled when the reason is a driver report,
 a defective or additional item found during another job, a service call
 or breakdown, negligence, a no-start, an accident with damage (reported
-or unreported), a comeback, vandalism, or warranty. *Scheduled* covers
+or unreported), a comeback, vandalism, or warranty. Scheduled covers
 preventive maintenance, capital improvement, prep for delivery or
 disposal, seasonal conversion, and externally-mandated recalls.
 Modifications, vendor-work verification, parts supply, external repairs,
-and non-maintenance jobs are *excluded* from both labels because they
+and non-maintenance jobs are excluded from both labels because they
 sit outside the breakdown-versus-routine distinction.
 
 A work order is labelled unscheduled if any of its line items is
@@ -72,11 +101,10 @@ the model in a live production environment.
 
 I fetched daily Toronto weather (temperature, precipitation, snowfall,
 wind) from the free Open-Meteo Historical Weather API and cached it
-under `data/external/`. No API key is required; the same underlying
-ERA5 reanalysis values are available from Environment and Climate Change
-Canada with a more cumbersome interface. I also added a small Ontario
-statutory-holidays lookup, since fleet utilisation differs on and around
-those dates.
+under `data/external/`. No API key is required. The same data is also
+available from Environment and Climate Change Canada. I also added a
+small Ontario statutory-holidays lookup, since fleet utilisation differs
+on and around those dates.
 
 Three other public datasets came up while scoping this and did not make
 it into the pipeline. Transport Canada vehicle recalls were too sparse
@@ -94,7 +122,7 @@ from creeping into feature engineering decisions through the analyst
 having seen future data. For this assessment however, since the explicit
 task was to explore the provided datasets, I conducted EDA on the full
 year to give a complete and honest picture of fleet behaviour. The data
-leakage concern is instead addressed at the modeling stage through
+leakage concern is instead addressed at the modelling stage through
 walk-forward validation, which ensures the model itself never trains on
 future information regardless of what the analyst observed during
 exploration.
@@ -110,8 +138,8 @@ live under `reports/figures/`.
 The three files store `VEHICLE` with different dtypes. Driving Events
 and Job History use `int64`; Fault Alerts uses a zero-padded `string`.
 All IDs are six characters wide, so the loader normalises everything to
-a six-character string. Without this step, roughly 5% of vehicles —
-those whose ID starts with a zero — silently drop out of every join.
+a six-character string. Without this step, roughly 5% of vehicles (the
+ones whose ID starts with a zero) silently drop out of every join.
 
 Only 194 vehicles appear in all three datasets, and that's the
 modelable cohort. Another ~400 show up in Drives and Jobs but have no
@@ -133,8 +161,8 @@ should pick one or the other.
 The most consequential finding came from looking at fault severity over
 time. Before mid-June 2025 essentially every fault is `Unrated`; after
 that, the four-level severity (Critical, High, Medium, Low) starts
-populating. Whatever the rollout was — a new firmware, an enriched fault
-feed — it means severity-derived features only carry signal in the
+populating. Whatever the rollout was, a new firmware or an enriched
+fault feed, it means severity-derived features only carry signal in the
 second half of the modelling window.
 
 ![Weekly faults by severity](reports/figures/08_faults_weekly_by_severity.png)
@@ -177,6 +205,19 @@ one.
 
 ## Predictive model
 
+### Setup and model choice
+
+A short orientation for readers jumping straight to this section. The
+task is binary classification at the (vehicle, day) grain with a 7-day
+prediction horizon and a roughly 10% positive rate. A gradient-boosted
+classifier is a reasonable first choice here: it handles mixed numeric
+features and missing values out of the box, fits in seconds on a panel
+this size, and supports a clean SHAP explanation for the final result.
+The per-vehicle frequency baseline alongside it gives a reference floor
+to measure lift against, and walk-forward validation over five
+date-boundary folds keeps the evaluation honest about the time-series
+nature of the data.
+
 ### Features
 
 The model operates on a per-(vehicle, day) feature matrix produced by
@@ -203,8 +244,8 @@ is-Ontario-statutory-holiday flag, and days-to-next-holiday. Weather
 features cover today's max, min and mean temperature, a trailing-7-day
 aggregate of mean temperature, precipitation, snowfall, below-freezing
 days and freeze-thaw days, and the same five aggregates for the
-*forward-looking* 7-day window. That forward-looking window is the
-proxy for the production forecast described above.
+forward-looking 7-day window. That forward-looking window is the proxy
+for the production forecast described above.
 
 All rolling windows look strictly at data before `t`. The only columns
 that look forward are the `forecast7_*` weather aggregates.
@@ -214,7 +255,7 @@ that look forward are the `forecast7_*` weather aggregates.
 The target is 1 if a vehicle has any unscheduled work order opened in
 `(t, t+7d]`, else 0. Splits are walk-forward at calendar-day
 boundaries, five folds total, implemented in
-`src.modeling.walk_forward_splits`. Fold *k* trains on everything
+`src.modeling.walk_forward_splits`. Fold k trains on everything
 before its test window and tests on the next ~60-day slice. No single
 calendar day is shared between train and test, which avoids a
 leakage issue you can get from the off-the-shelf `TimeSeriesSplit` on a
@@ -263,8 +304,10 @@ The unscheduled definition is the per-code mapping above. The placement
 of warranty (W) and recall (R) work is the most defensible-but-arguable
 part of that mapping, and a sensitivity study on it would be useful.
 
-Historical weather is used in place of the 7-day forecast that would
-actually be available at prediction time. The mid-year onset of
+As mentioned in the data section above, for the purposes of this
+assignment I am assuming that actual historical weather data serves as
+a proxy for the 7-day forecast that would be available to the model in
+a live production environment. Beyond that, the mid-year onset of
 severity tagging means model performance is probably better in the
 late-year folds than the early ones, and the reported numbers are
 averages across all five.
@@ -284,46 +327,17 @@ take longer than seven days to manifest as breakdowns. The same feature
 set evaluated at 30 or 60 days would likely show more lift from those
 features.
 
-Two smaller directions sit beneath those. Per-vehicle context — vehicle
-age, odometer, model year, replacement cost — is not in the provided
-extract but lives in the FMIS, and even basic asset attributes would
-likely discriminate better than event counts alone. And the
-schedule-class mapping itself deserves a sensitivity pass; warranty
-work is technically unplanned from the fleet's point of view but is
-initiated by the manufacturer rather than by a breakdown, and could
-reasonably be excluded.
+Two smaller directions sit beneath those. There is per-vehicle context
+that isn't in the provided extract but lives in the FMIS, things like
+vehicle age, odometer reading, model year, and replacement cost. Even
+basic asset attributes would likely discriminate better than event
+counts alone. Beyond that, the schedule-class mapping itself deserves a
+sensitivity pass; warranty work is technically unplanned from the
+fleet's point of view but is initiated by the manufacturer rather than
+by a breakdown, and could reasonably be excluded.
 
 Operationally, the predicted probability can be thresholded into a
 weekly "top-N vehicles to inspect" list, with SHAP providing a
 per-vehicle explanation alongside each alert. The threshold should be
 tuned to the shop's actual capacity rather than to a fixed statistical
 target.
-
-## Appendix — Repository layout
-
-```text
-.
-├── README.md                       # This document
-├── requirements.txt                # Pinned dependencies
-├── main.py                         # End-to-end runnable pipeline
-├── config.py                       # Paths, label maps, modeling constants
-│
-├── data/
-│   ├── raw/                        # Provided .xlsx files (gitignored)
-│   ├── external/                   # Weather, holidays (fetched on demand)
-│   └── processed/                  # Parquet cache + feature matrices
-│
-├── notebooks/
-│   └── 01_eda.ipynb                # Exploratory data analysis
-│
-├── src/
-│   ├── data_loading.py             # Read xlsx, normalise vehicle IDs, parquet cache
-│   ├── data_cleaning.py            # Parse EXTRA_INFO, classify jobs, WO grain
-│   ├── weather_api.py              # Open-Meteo historical-weather client
-│   ├── features.py                 # Per-(vehicle, day) rolling-window features
-│   ├── modeling.py                 # Walk-forward training and evaluation
-│   └── plotting.py                 # Shared matplotlib styling
-│
-└── reports/
-    └── figures/                    # PNGs referenced from this README
-```
