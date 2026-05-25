@@ -1,7 +1,7 @@
-# Toronto Fleet — 7-day Unscheduled Repair Prediction
+# Toronto Fleet (EDA and 7-day Unscheduled Repair Prediction)
 
 A take-home assignment for the Data Specialist position at the City of
-Toronto Fleet Services Division. The brief asks for two things: an
+Toronto Fleet Services Division. The assesment asks for two things: an
 exploratory data analysis of the three provided datasets, and a
 predictive model that estimates the likelihood a vehicle will experience
 an unscheduled repair event within the next 7 days, using historical
