@@ -207,7 +207,7 @@ one.
 
 ### Setup and model choice
 
-To briefly reiterate, the brief asks for the likelihood that a vehicle
+To briefly reiterate, we are interested in the likelihood that a vehicle
 will experience an unscheduled repair event in the next 7 days.
 Predicting the probability of a yes/no event over a fixed window is a
 binary classification problem, framed here at the (vehicle, day) grain
