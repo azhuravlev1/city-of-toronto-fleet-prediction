@@ -1,7 +1,7 @@
 # Toronto Fleet (EDA and 7-day Unscheduled Repair Prediction)
 
 A take-home assignment for the Data Specialist position at the City of
-Toronto Fleet Services Division. The assesment asks for two things: an
+Toronto Fleet Services Division. The assessment asks for two things: an
 exploratory data analysis of the three provided datasets, and a
 predictive model that estimates the likelihood a vehicle will experience
 an unscheduled repair event within the next 7 days, using historical
@@ -69,7 +69,7 @@ fleet.
 | `Driving Events.xlsx` | 43,118 | 598 | 2025-01-01 → 2025-12-30 | one speeding incident |
 | `Engine Device Fault Alerts.xlsx` | 188,022 | 245 | 2025-01-01 → 2025-12-31 | one fault event |
 | `Job History.xlsx` | 36,829 | 734 | 2024-05-29 → 2026-02-02 | one job line within a work order |
-| Common cohort (all three) | — | 194 | — | — |
+| Common cohort (all three) | n/a | 194 | n/a | n/a |
 
 ### Defining an "unscheduled repair event"
 
@@ -114,7 +114,7 @@ vehicles needs sub-fleet attribution that isn't in the extract. Toronto
 Road Restrictions and 311 service requests are relevant to idling and
 salt exposure, but would need per-trip GPS traces.
 
-## Approach to EDA — scope and leakage
+## Approach to EDA: scope and leakage
 
 A conservative approach would be to restrict EDA to the training window
 only, which in a production pipeline would prevent any unconscious bias
