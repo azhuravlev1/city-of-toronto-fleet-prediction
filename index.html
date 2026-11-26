@@ -23,19 +23,16 @@
 </header>
 
 <section class="hero">
-  <div class="ticket">
-    <div class="ticket-holes" aria-hidden="true"></div>
-    <div class="ticket-top">
-      <span>WORK ORDER</span>
-      <span class="stamp">COMPLETE</span>
-    </div>
-    <div class="ticket-grid">
-      <div><small>REQUESTED BY</small><span>City of Toronto · Fleet Services (take-home assessment)</span></div>
-      <div><small>UNITS</small><span>Heavy-duty vehicles</span></div>
-      <div class="full"><small>JOB DESCRIPTION</small><span>Estimate the probability that a vehicle will have an unscheduled repair in the next 7 days, from fault alerts, driving events and work order history.</span></div>
-    </div>
+  <div class="hero-panel">
+    <p class="hero-kicker"><span class="kdot" aria-hidden="true"></span>City of Toronto · Fleet Services · Predictive maintenance</p>
     <h1>Will this truck break down next week?</h1>
-    <p class="ticket-note">An exploratory analysis of three fleet datasets, a gradient-boosted model with walk-forward validation, and an honest look at what the data can and cannot predict.</p>
+    <p class="hero-sub">An exploratory analysis of three fleet datasets, a gradient-boosted model with walk-forward validation, and an honest look at what the data can and cannot predict.</p>
+    <dl class="hero-meta">
+      <div><dt>Task</dt><dd>Probability of an unscheduled repair within 7 days</dd></div>
+      <div><dt>Units</dt><dd>Heavy-duty vehicles, 2025</dd></div>
+      <div><dt>Signals</dt><dd>Fault alerts, driving events, work orders, weather</dd></div>
+      <div><dt>Context</dt><dd>Take-home assessment for Fleet Services</dd></div>
+    </dl>
   </div>
 
   <a class="repo-btn" href="https://github.com/azhuravlev1/city-of-toronto-fleet-prediction" target="_blank" rel="noopener">
@@ -156,7 +153,7 @@
 
   <section class="signoff">
     <div class="signoff-card">
-      <p class="signoff-title">SIGNED OFF</p>
+      <p class="signoff-title">IN THE REPOSITORY</p>
       <p>With the City's data files in place, the whole pipeline runs with one command. The raw data itself is not redistributed.</p>
       <div class="signoff-buttons">
         <a class="btn btn-yellow" href="https://github.com/azhuravlev1/city-of-toronto-fleet-prediction" target="_blank" rel="noopener">View the code on GitHub</a>
