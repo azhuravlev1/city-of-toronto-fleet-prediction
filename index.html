@@ -3,169 +3,193 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Will This Truck Break Down Next Week? | Andrey Zhuravlev</title>
-<meta name="description" content="Predicting unscheduled repairs for City of Toronto heavy-duty vehicles from fault alerts, driving events, work orders and weather, with honest walk-forward evaluation.">
-<meta property="og:title" content="Will this truck break down next week?">
-<meta property="og:description" content="Fault alerts, speeding events, work orders and weather for a municipal heavy-duty fleet, and what a 7-day repair model can and cannot see. By Andrey Zhuravlev.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2210%22 fill=%22%23FFC20E%22/%3E%3Cpath d=%22M0 48L48 0h16L0 64z%22 fill=%22%231F2226%22/%3E%3C/svg%3E">
+<title>Toronto Heavy-Duty Fleet: 7-Day Unscheduled Repair Prediction | Andrey Zhuravlev</title>
+<meta name="description" content="Exploratory analysis and 7-day unscheduled repair prediction for City of Toronto heavy-duty vehicles using fault alerts, driving events, work orders and weather.">
+<meta property="og:title" content="Toronto Heavy-Duty Fleet: 7-Day Unscheduled Repair Prediction">
+<meta property="og:description" content="Fault alerts, driving events, work orders and weather for a municipal heavy-duty fleet, evaluated with walk-forward validation. By Andrey Zhuravlev.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2212%22 fill=%22%23165788%22/%3E%3Cpath d=%22M18 46V24c0-5 5-8 10-8v30M46 46V20c0-5-5-8-10-8v34M12 46h40%22 fill=%22none%22 stroke=%22%23FFFFFF%22 stroke-width=%224.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
-<div class="hazard" aria-hidden="true"></div>
-<header class="bar">
-  <span class="bar-name">ANDREY ZHURAVLEV</span>
-  <span class="bar-mid">FLEET SERVICES · PREDICTIVE MAINTENANCE</span>
-  <a class="bar-link" href="https://github.com/azhuravlev1/city-of-toronto-fleet-prediction" target="_blank" rel="noopener">GITHUB ↗</a>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#top">Andrey Zhuravlev <span class="brand-sep" aria-hidden="true">/</span> <span class="brand-sub">Fleet Predictive Maintenance</span></a>
+    <a class="topbar-link" href="https://github.com/azhuravlev1/city-of-toronto-fleet-prediction" target="_blank" rel="noopener">GitHub repository ↗</a>
+  </div>
 </header>
 
-<section class="hero">
-  <div class="hero-panel">
-    <p class="hero-kicker"><span class="kdot" aria-hidden="true"></span>City of Toronto · Fleet Services · Predictive maintenance</p>
-    <h1>Will this truck break down next week?</h1>
-    <p class="hero-sub">An exploratory analysis of three fleet datasets, a gradient-boosted model with walk-forward validation, and an honest look at what the data can and cannot predict.</p>
+<section class="hero" id="top">
+  <!-- Subtle civic skyline line graphic -->
+  <svg class="skyline" viewBox="0 0 640 340" fill="none" aria-hidden="true">
+    <path d="M0 310 H640" stroke="currentColor" stroke-width="1.5"/>
+    <!-- West & East curved towers (abstract architectural silhouette) -->
+    <path d="M170 310 V140 C170 112 204 102 222 102 V310" stroke="currentColor" stroke-width="2"/>
+    <path d="M276 310 V88 C276 62 316 54 336 54 V310" stroke="currentColor" stroke-width="2"/>
+    <ellipse cx="250" cy="272" rx="44" ry="18" stroke="currentColor" stroke-width="2"/>
+    <path d="M220 288 V310 M280 288 V310" stroke="currentColor" stroke-width="1.5"/>
+    <!-- Tall tower silhouette -->
+    <path d="M472 310 L482 140 L486 40 L490 140 L500 310" stroke="currentColor" stroke-width="2"/>
+    <ellipse cx="486" cy="144" rx="22" ry="7" stroke="currentColor" stroke-width="2"/>
+    <ellipse cx="486" cy="100" rx="9" ry="4" stroke="currentColor" stroke-width="1.5"/>
+    <!-- Subtle municipal grid lines -->
+    <path d="M60 310 V220 H112 V310 M380 310 V200 H428 V310 M540 310 V230 H592 V310" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>
+  </svg>
+
+  <div class="hero-inner">
+    <p class="hero-kicker">City of Toronto · Fleet Services Division · Data Specialist Assessment</p>
+    <h1>Toronto Heavy-Duty Fleet:<br>7-Day Unscheduled Repair Prediction</h1>
+    <p class="hero-sub">An exploratory analysis of three municipal fleet datasets, a gradient-boosted repair risk model with walk-forward validation, and an honest assessment of what current telematics can and cannot predict.</p>
+
+    <div class="hero-actions">
+      <a class="repo-btn" href="https://github.com/azhuravlev1/city-of-toronto-fleet-prediction" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span class="repo-btn-text">
+          <strong>View the code on GitHub</strong>
+          <small>github.com/azhuravlev1/city-of-toronto-fleet-prediction</small>
+        </span>
+        <span class="repo-arrow" aria-hidden="true">→</span>
+      </a>
+      <a class="readme-link" href="https://github.com/azhuravlev1/city-of-toronto-fleet-prediction#readme" target="_blank" rel="noopener">Read the full technical README ↗</a>
+    </div>
+
     <dl class="hero-meta">
-      <div><dt>Task</dt><dd>Probability of an unscheduled repair within 7 days</dd></div>
-      <div><dt>Units</dt><dd>Heavy-duty vehicles, 2025</dd></div>
-      <div><dt>Signals</dt><dd>Fault alerts, driving events, work orders, weather</dd></div>
-      <div><dt>Context</dt><dd>Take-home assessment for Fleet Services</dd></div>
+      <div><dt>Prediction target</dt><dd>Unscheduled repair within 7 days</dd></div>
+      <div><dt>Fleet scope</dt><dd>194 heavy-duty units across 3 feeds</dd></div>
+      <div><dt>Signals used</dt><dd>Fault alerts, driving, work orders, weather</dd></div>
+      <div><dt>Evaluation</dt><dd>5-fold walk-forward validation + SHAP</dd></div>
     </dl>
   </div>
-
-  <a class="repo-btn" href="https://github.com/azhuravlev1/city-of-toronto-fleet-prediction" target="_blank" rel="noopener">
-    <span class="repo-icon">
-      <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-    </span>
-    <span class="repo-text"><small>Pipeline, notebook and full write-up</small><strong>Open the repository on GitHub</strong></span>
-    <span class="repo-arrow" aria-hidden="true">→</span>
-  </a>
-  <p class="hero-sub-link">The complete technical write-up is the <a href="https://github.com/azhuravlev1/city-of-toronto-fleet-prediction#readme" target="_blank" rel="noopener">repository README</a>.</p>
 </section>
 
+<nav class="subnav" aria-label="Report sections">
+  <div class="subnav-inner">
+    <a href="#data" data-nav="data">01 Data</a>
+    <a href="#label" data-nav="label">02 Labels</a>
+    <a href="#drift" data-nav="drift">03 Temporal shifts</a>
+    <a href="#vehicle" data-nav="vehicle">04 Timeline</a>
+    <a href="#model" data-nav="model">05 Model</a>
+    <a href="#results" data-nav="results">06 Results</a>
+    <a href="#next" data-nav="next">07 Recommendations</a>
+  </div>
+</nav>
+
 <main>
-  <ol class="checklist">
 
-    <li class="item" id="data">
-      <div class="item-head"><span class="check" aria-hidden="true"></span><span class="item-num">01</span><h2>Three datasets, one fleet</h2></div>
-      <div class="sheet">
-        <p class="lead">The City provided three exports about the same vehicles, each telling a different part of the story.</p>
-        <div class="datasets">
-          <div class="ds"><span class="ds-tag" style="--c:#2C5F8A">DRIVING EVENTS</span><b>43,118</b><span>speeding incidents · 598 vehicles · 2025</span></div>
-          <div class="ds"><span class="ds-tag" style="--c:#C8102E">FAULT ALERTS</span><b>188,022</b><span>engine fault events · 245 vehicles · 2025</span></div>
-          <div class="ds"><span class="ds-tag" style="--c:#2E7D32">JOB HISTORY</span><b>36,829</b><span>work order lines · 734 vehicles · May 2024 to Feb 2026</span></div>
-        </div>
-        <p>The first surprise was in the joins. One file stores vehicle IDs as numbers and another as zero-padded text, so about 5% of vehicles silently disappeared from every join until all IDs were normalised to six characters. After that, only 194 vehicles appear in all three datasets. That is the cohort a model can learn from.</p>
-        <figure class="fig narrow">
-          <img src="assets/img/01_vehicle_venn.jpg" alt="Venn diagram of vehicles in the three datasets: 194 in all three, 403 in driving events and jobs only" loading="lazy">
-          <figcaption><span>FIG. 1</span> Vehicles covered by each dataset. Only 194 have driving, fault and repair data.</figcaption>
-        </figure>
-        <p>Weather was not in the data, so I added daily Toronto weather from the Open-Meteo historical API and an Ontario statutory holiday calendar. Historical weather stands in for the 7-day forecast a live system would use.</p>
+  <section class="section" id="data">
+    <div class="section-head"><span class="sec-num">01</span><h2>Three datasets, one fleet</h2></div>
+    <p class="lead">The City provided three exports describing the same heavy-duty fleet, each capturing a different part of vehicle operations.</p>
+    <div class="datasets">
+      <div class="ds"><span class="ds-tag blue">Driving events</span><b>43,118</b><span>speeding incidents · 598 vehicles · 2025</span></div>
+      <div class="ds"><span class="ds-tag red">Fault alerts</span><b>188,022</b><span>engine fault events · 245 vehicles · 2025</span></div>
+      <div class="ds"><span class="ds-tag green">Job history</span><b>36,829</b><span>work order lines · 734 vehicles · May 2024 to Feb 2026</span></div>
+    </div>
+    <p>The first finding was in the joins. Two files store vehicle IDs as integers while Fault Alerts stores them as zero-padded text, so roughly 5% of vehicles silently dropped out of every join until all IDs were normalised to six-character strings. After alignment, only 194 vehicles appear across all three feeds. That common subset is the cohort a model can learn from.</p>
+    <figure class="fig narrow">
+      <img src="assets/img/01_vehicle_venn.jpg" alt="Venn diagram of vehicles in the three datasets: 194 in all three, 403 in driving events and jobs only" loading="lazy">
+      <figcaption><span>Figure 1</span> Vehicle coverage across the three raw datasets. Only 194 units have driving, fault and repair history together.</figcaption>
+    </figure>
+    <p>Because the provided feeds do not capture road conditions, I added daily Toronto weather from the Open-Meteo Historical Weather API along with an Ontario statutory holiday calendar. Historical weather serves as a proxy for the 7-day forecast a live production system would consume.</p>
+  </section>
+
+  <section class="section" id="label">
+    <div class="section-head"><span class="sec-num">02</span><h2>Defining an unscheduled repair</h2></div>
+    <p class="lead">Before modelling breakdown risk, the work-order records needed a clear target definition.</p>
+    <p>Each job line carries one of 21 reason codes, which map into three classes. Driver reports, defects discovered during other work, service calls, no-starts, accidents, comebacks, vandalism and warranty work are labelled <span class="badge red">unscheduled</span>. Preventive maintenance, capital improvements, delivery and disposal prep, seasonal conversions and recalls are labelled <span class="badge green">scheduled</span>. Modifications, vendor checks and parts supply fall outside the distinction and are excluded. A work order is marked unscheduled if any of its lines is unscheduled, since the operational question is whether a vehicle enters the shop unexpectedly.</p>
+    <figure class="fig">
+      <img src="assets/img/10_jobs_reason_class.jpg" alt="Bar chart of job reason codes coloured by schedule class: preventive maintenance is the largest, followed by driver reports and defective or additional items" loading="lazy">
+      <figcaption><span>Figure 2</span> Job reason codes coloured by schedule class. At the work-order level, about 82% of work orders are unscheduled, led by driver reports and defects found during other jobs.</figcaption>
+    </figure>
+  </section>
+
+  <section class="section" id="drift">
+    <div class="section-head"><span class="sec-num">03</span><h2>Mid-year data shifts</h2></div>
+    <p class="lead">Before mid-June 2025, almost every engine fault alert is logged as "Unrated". After that point, a four-level severity scale begins populating.</p>
+    <figure class="fig">
+      <img src="assets/img/08_faults_weekly_by_severity.jpg" alt="Stacked area chart of weekly fault counts by severity: unrated only until June 2025, then critical, high, medium and low appear" loading="lazy">
+      <figcaption><span>Figure 3</span> Weekly fault alerts by severity. Whether caused by a firmware update or an enriched fault feed, severity-based features only carry signal in the second half of the year.</figcaption>
+    </figure>
+    <p>Overall telematics volume also climbed steadily across the year: fault alerts grew from roughly 1,500 to 6,000 per week, and speeding events from about 150 to 1,500 per week. Unscheduled work orders stayed flat at around 200 per week. Vehicles were not failing four times more often; telematics coverage was expanding. To avoid confounding by fleet size, every model feature is computed at the per-vehicle level rather than as a fleet-wide total.</p>
+    <figure class="fig">
+      <img src="assets/img/15_fleet_weekly_signals.jpg" alt="Three stacked weekly time series: fault alerts and speeding events rising through 2025, unscheduled work orders flat" loading="lazy">
+      <figcaption><span>Figure 4</span> Weekly fault alerts, speeding events and unscheduled work orders across the 2025 modelling window.</figcaption>
+    </figure>
+  </section>
+
+  <section class="section" id="vehicle">
+    <div class="section-head"><span class="sec-num">04</span><h2>A single vehicle's timeline</h2></div>
+    <p class="lead">Plotting all three feeds for one unit shows the event stream the model sees day by day.</p>
+    <figure class="fig">
+      <img src="assets/img/13_sample_vehicle_timeline.jpg" alt="Timeline for vehicle 161030 in 2025 showing fault alerts, speeding events and unscheduled work order openings" loading="lazy">
+      <figcaption><span>Figure 5</span> Fault alerts, speeding events and unscheduled work order openings during 2025 for a single vehicle (unit 161030). The model examines the trailing window before each work order to estimate 7-day repair risk.</figcaption>
+    </figure>
+  </section>
+
+  <section class="section" id="model">
+    <div class="section-head"><span class="sec-num">05</span><h2>Modelling and walk-forward validation</h2></div>
+    <p class="lead">Each observation represents one vehicle on one calendar day, with a binary label indicating whether an unscheduled work order opens within the next seven days.</p>
+    <div class="specs">
+      <div><small>Feature rows</small><b>69,452</b></div>
+      <div><small>Features</small><b>37</b></div>
+      <div><small>Positive rate</small><b>10.2%</b></div>
+      <div><small>Validation</small><b>5 folds</b></div>
+    </div>
+    <p>Features cover rolling fault counts over 1, 7 and 30 days (including separate windows for critical and high-severity alerts), days since the last critical fault, trailing speeding counts, duration and distance, recent scheduled and unscheduled work orders, each vehicle's cumulative breakdown and fault rates, calendar and holiday indicators, and trailing plus forward-looking weather (temperature, precipitation, snowfall and freeze-thaw days).</p>
+    <p>I trained scikit-learn's HistGradientBoostingClassifier and benchmarked it against a per-vehicle frequency baseline that predicts each unit's historical 7-day repair rate (falling back to the fleet average for unseen vehicles). Both are evaluated using five walk-forward folds cut on calendar-day boundaries, so no day is shared between training and testing.</p>
+    <figure class="fig">
+      <div id="walk" class="walk" role="img" aria-label="Walk-forward validation: five folds, each training on all data before its test window"></div>
+      <figcaption><span>Figure 6</span> Walk-forward validation design. Each fold trains strictly on history before the cut-off (grey) and evaluates on the following ~60-day window (blue). Fold boundaries are shown approximately.</figcaption>
+    </figure>
+  </section>
+
+  <section class="section" id="results">
+    <div class="section-head"><span class="sec-num">06</span><h2>Evaluation: baseline vs. gradient boosting</h2></div>
+    <p class="lead">Across five walk-forward folds, the gradient-boosted model did not decisively outperform the simple per-vehicle baseline.</p>
+    <div id="scores" class="scores"></div>
+    <p class="small-cap">Mean ± standard deviation across the five walk-forward folds. Higher is better for ROC-AUC and PR-AUC; lower is better for the Brier score. Both models clear the 10.2% fleet base rate.</p>
+    <p>The GBM gains slightly on PR-AUC but trails on ROC-AUC and Brier score. The SHAP summary explains why: the top three features are lifetime unscheduled repair rate, days since the last unscheduled work order, and lifetime fault rate. All three encode a vehicle's prior maintenance history. Recent telematics alerts and weather contribute, but an order of magnitude less. On this cohort, a vehicle's repair history is far more informative than short-term fault spikes.</p>
+    <figure class="fig">
+      <img src="assets/img/16_shap_summary.jpg" alt="SHAP summary plot with lifetime unscheduled rate, days since unscheduled work order and lifetime fault rate as the top features" loading="lazy">
+      <figcaption><span>Figure 7</span> SHAP summary for the gradient-boosted model, ordered by overall impact on predicted 7-day repair risk.</figcaption>
+    </figure>
+  </section>
+
+  <section class="section" id="next">
+    <div class="section-head"><span class="sec-num">07</span><h2>Recommendations</h2></div>
+    <div class="recs">
+      <div class="rec primary"><span class="rec-tag">Priority 1</span><h3>Expand telematics coverage</h3><p>Only 194 of the City's 5,000+ heavy-duty units appear in all three feeds. Onboarding more vehicles into the fault and driving-event streams would lift predictive power more than further feature engineering on the current cohort.</p></div>
+      <div class="rec"><span class="rec-tag">Priority 2</span><h3>Test a longer forecast horizon</h3><p>Component wear and freeze-thaw stress typically take longer than seven days to cause a shop visit. Re-evaluating the same feature set at 30-day or 60-day horizons would likely capture more signal from telematics and weather.</p></div>
+      <div class="rec"><span class="rec-tag">Priority 3</span><h3>Join core asset attributes</h3><p>Vehicle age, odometer reading, model year and replacement cost already sit in the fleet management system and should separate chronic problem units much better than event counts alone.</p></div>
+      <div class="rec"><span class="rec-tag">Priority 4</span><h3>Deploy as a ranked inspection list</h3><p>Convert predicted probabilities into a weekly top-N inspection queue sized to shop capacity, paired with per-vehicle SHAP explanations so supervisors can see why each unit was flagged.</p></div>
+    </div>
+  </section>
+
+  <section class="closing">
+    <div class="closing-card">
+      <div>
+        <p class="closing-kicker">Reproducibility</p>
+        <h2>Full pipeline and technical write-up</h2>
+        <p>With the City's input files placed in <code>data/raw/</code>, the full pipeline runs with a single command (<code>python main.py</code>). Raw municipal data is not redistributed.</p>
       </div>
-    </li>
-
-    <li class="item" id="label">
-      <div class="item-head"><span class="check" aria-hidden="true"></span><span class="item-num">02</span><h2>What counts as a breakdown?</h2></div>
-      <div class="sheet">
-        <p class="lead">Before predicting unscheduled repairs, I had to define them.</p>
-        <p>Every job line carries a reason code, and the 21 codes split into three groups. Driver reports, defects found during other work, service calls, no-starts, accidents, comebacks, vandalism and warranty work count as <span class="hl red">unscheduled</span>. Preventive maintenance, capital improvements, delivery and disposal prep, seasonal conversions and recalls are <span class="hl green">scheduled</span>. Modifications, vendor checks and parts supply are left out of both. A work order counts as unscheduled if any of its lines is, because the real question is whether the truck goes into the shop.</p>
-        <figure class="fig">
-          <img src="assets/img/10_jobs_reason_class.jpg" alt="Bar chart of job reason codes coloured by schedule class: preventive maintenance is the largest, followed by driver reports and defective or additional items" loading="lazy">
-          <figcaption><span>FIG. 2</span> Job reasons, coloured by how they were classified. About 82% of work orders end up unscheduled, mostly driver reports and defects found during other work.</figcaption>
-        </figure>
-      </div>
-    </li>
-
-    <li class="item" id="drift">
-      <div class="item-head"><span class="check" aria-hidden="true"></span><span class="item-num">03</span><h2>The data changed halfway through the year</h2></div>
-      <div class="sheet">
-        <p class="lead">Before mid-June 2025, almost every fault alert is "Unrated". After that, a four-level severity scale suddenly appears.</p>
-        <figure class="fig">
-          <img src="assets/img/08_faults_weekly_by_severity.jpg" alt="Stacked area chart of weekly fault counts by severity: unrated only until June 2025, then critical, high, medium and low appear" loading="lazy">
-          <figcaption><span>FIG. 3</span> Weekly fault alerts by severity. Whatever changed in June, a firmware update or a richer feed, severity features only carry signal in the second half of the year.</figcaption>
-        </figure>
-        <p>Telematics volume also grew all year: from about 1,500 to 6,000 fault alerts a week, and from about 150 to 1,500 speeding events. Unscheduled work orders stayed flat at around 200 a week. The trucks were not breaking down four times as often; more of them were simply being tracked. That is why every model feature is measured per vehicle rather than across the whole fleet.</p>
-        <figure class="fig">
-          <img src="assets/img/15_fleet_weekly_signals.jpg" alt="Three stacked weekly time series: fault alerts and speeding events rising through 2025, unscheduled work orders flat" loading="lazy">
-          <figcaption><span>FIG. 4</span> Weekly fault alerts, speeding events and unscheduled work orders across the modelling window.</figcaption>
-        </figure>
-      </div>
-    </li>
-
-    <li class="item" id="vehicle">
-      <div class="item-head"><span class="check" aria-hidden="true"></span><span class="item-num">04</span><h2>One truck's year</h2></div>
-      <div class="sheet">
-        <p class="lead">This is the raw material for one vehicle: faults, speeding events and the days it went into the shop.</p>
-        <figure class="fig">
-          <img src="assets/img/13_sample_vehicle_timeline.jpg" alt="Timeline for vehicle 161030 in 2025 showing fault alerts, speeding events and unscheduled work order openings" loading="lazy">
-          <figcaption><span>FIG. 5</span> Signals over 2025 for a single vehicle. The model's job is to look at the weeks before each orange mark and learn what they have in common.</figcaption>
-        </figure>
-      </div>
-    </li>
-
-    <li class="item" id="model">
-      <div class="item-head"><span class="check" aria-hidden="true"></span><span class="item-num">05</span><h2>The model</h2></div>
-      <div class="sheet">
-        <p class="lead">Each row is one vehicle on one day, and the target is whether an unscheduled work order opens in the next seven days.</p>
-        <div class="specs">
-          <div><small>ROWS</small><b>69,452</b></div>
-          <div><small>FEATURES</small><b>37</b></div>
-          <div><small>POSITIVE RATE</small><b>10.2%</b></div>
-          <div><small>VALIDATION</small><b>5 folds</b></div>
-        </div>
-        <p>Features include rolling fault counts over 1, 7 and 30 days (and separately for critical and high severity), days since the last critical fault, speeding counts, minutes and kilometres, recent scheduled and unscheduled work orders, each vehicle's lifetime breakdown and fault rates, calendar and holiday flags, and trailing and forward-looking weather such as freeze-thaw days and snowfall.</p>
-        <p>The model is scikit-learn's HistGradientBoostingClassifier, compared against a simple baseline that predicts each vehicle's own historical breakdown rate. Both are evaluated with walk-forward validation: each fold trains on everything before a cut-off date and tests on the next 60 days, with no calendar day shared between training and testing.</p>
-        <figure class="fig">
-          <div id="walk" class="walk" role="img" aria-label="Walk-forward validation: five folds, each training on all data before its test window"></div>
-          <figcaption><span>FIG. 6</span> Walk-forward validation. The training window (grey) always ends before the test window (yellow), so the model never sees the future. Fold boundaries are drawn approximately.</figcaption>
-        </figure>
-      </div>
-    </li>
-
-    <li class="item" id="results">
-      <div class="item-head"><span class="check" aria-hidden="true"></span><span class="item-num">06</span><h2>The baseline held its ground</h2></div>
-      <div class="sheet">
-        <p class="lead">The gradient-boosted model did not beat the simple per-vehicle baseline in any meaningful way.</p>
-        <div id="scores" class="scores"></div>
-        <p class="small-cap">Mean ± standard deviation across the five walk-forward folds. Higher is better for ROC-AUC and PR-AUC; lower is better for the Brier score. Both models clear the 10.2% base rate.</p>
-        <p>The model gained a little on PR-AUC but lost on ROC-AUC and Brier score. SHAP shows why: the three most important features are a vehicle's lifetime breakdown rate, days since its last unscheduled repair, and its lifetime fault rate. All three describe the vehicle's history. Recent faults and weather do contribute, but an order of magnitude less. In this data, the best predictor of a truck going into the shop next week is how often it has gone into the shop before.</p>
-        <figure class="fig">
-          <img src="assets/img/16_shap_summary.jpg" alt="SHAP summary plot with lifetime unscheduled rate, days since unscheduled work order and lifetime fault rate as the top features" loading="lazy">
-          <figcaption><span>FIG. 7</span> SHAP summary for the final model. Features are ordered by their overall impact on predictions.</figcaption>
-        </figure>
-      </div>
-    </li>
-
-    <li class="item" id="next">
-      <div class="item-head"><span class="check" aria-hidden="true"></span><span class="item-num">07</span><h2>Recommendations</h2></div>
-      <div class="sheet">
-        <div class="recs">
-          <div class="rec"><span class="rec-tag">1 · MOST IMPORTANT</span><h3>Track more of the fleet</h3><p>Only 194 of the City's 5,000-plus heavy-duty units have all three signals. More telematics coverage would help more than any amount of feature engineering on the current cohort.</p></div>
-          <div class="rec"><span class="rec-tag">2</span><h3>Look further ahead</h3><p>Freeze-thaw cycles and component wear take longer than seven days to turn into breakdowns. The same features at 30 or 60 days would probably show more lift.</p></div>
-          <div class="rec"><span class="rec-tag">3</span><h3>Add asset data</h3><p>Vehicle age, odometer, model year and replacement cost already live in the fleet management system and would likely discriminate better than event counts alone.</p></div>
-          <div class="rec"><span class="rec-tag">4</span><h3>Use it as an inspection list</h3><p>Threshold the predicted probability into a weekly top-N list sized to the shop's capacity, with a SHAP explanation next to each vehicle.</p></div>
-        </div>
-      </div>
-    </li>
-  </ol>
-
-  <section class="signoff">
-    <div class="signoff-card">
-      <p class="signoff-title">IN THE REPOSITORY</p>
-      <p>With the City's data files in place, the whole pipeline runs with one command. The raw data itself is not redistributed.</p>
-      <div class="signoff-buttons">
-        <a class="btn btn-yellow" href="https://github.com/azhuravlev1/city-of-toronto-fleet-prediction" target="_blank" rel="noopener">View the code on GitHub</a>
-        <a class="btn btn-ghost" href="https://github.com/azhuravlev1/city-of-toronto-fleet-prediction#readme" target="_blank" rel="noopener">Read the full write-up</a>
+      <div class="closing-buttons">
+        <a class="btn btn-primary" href="https://github.com/azhuravlev1/city-of-toronto-fleet-prediction" target="_blank" rel="noopener">View on GitHub</a>
+        <a class="btn btn-secondary" href="https://github.com/azhuravlev1/city-of-toronto-fleet-prediction#readme" target="_blank" rel="noopener">Read full README</a>
       </div>
     </div>
-    <p class="fine">Take-home assessment for a Data Specialist position with City of Toronto Fleet Services. Weather: Open-Meteo Historical Weather API. This page is an independent project and is not published by the City of Toronto.</p>
+    <p class="fine">Take-home assessment prepared for a Data Specialist role with City of Toronto Fleet Services. Historical weather: Open-Meteo API. This page is an independent portfolio project and is not an official publication of the City of Toronto.</p>
   </section>
+
 </main>
 
-<footer class="footer">Andrey Zhuravlev · <a href="https://github.com/azhuravlev1" target="_blank" rel="noopener">github.com/azhuravlev1</a> · <a href="https://linkedin.com/in/andrey-zh" target="_blank" rel="noopener">linkedin.com/in/andrey-zh</a></footer>
-<div class="hazard" aria-hidden="true"></div>
+<footer class="footer">
+  <div class="footer-inner">
+    <span>Andrey Zhuravlev</span>
+    <span><a href="https://github.com/azhuravlev1" target="_blank" rel="noopener">github.com/azhuravlev1</a> · <a href="https://linkedin.com/in/andrey-zh" target="_blank" rel="noopener">linkedin.com/in/andrey-zh</a></span>
+  </div>
+</footer>
 
 <script src="assets/js/main.js" defer></script>
 </body>
